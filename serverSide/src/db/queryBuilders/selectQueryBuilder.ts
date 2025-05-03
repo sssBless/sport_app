@@ -11,9 +11,13 @@ export class SelectQueryBuilder {
   }
 
   public build(): string {
-    const {table, columns = ['*']} = this.options;
+    const {table, columns = ['*'], schema} = this.options;
 
-    let query = this.knex(table).select(columns);
+    let baseQuery = schema
+    ? this.knex(table).withSchema(schema)
+    : this.knex(table);
+
+    let query = baseQuery.select(columns);
 
     this.applyJoins(query);
     this.applyWhere(query);

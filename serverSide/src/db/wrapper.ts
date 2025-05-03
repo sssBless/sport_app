@@ -1,7 +1,7 @@
-import { Knex, knex } from 'knex';
-import { ProviderFactory } from './factory/providerFactory';
-import { DatabaseConfig, DatabaseProvider, DatabaseType } from './types';
-import { getConnectionString, getKnexClientType } from './utils';
+import {Knex, knex} from 'knex';
+import {ProviderFactory} from './factory/providerFactory';
+import {DatabaseConfig, DatabaseProvider} from './types';
+import {getConnectionString, getKnexClientType} from './utils';
 
 export class DatabaseWrapper {
   private provider: DatabaseProvider;
@@ -15,17 +15,15 @@ export class DatabaseWrapper {
     this.knexInstance = knex({
       client: getKnexClientType(config.type),
       connection: {
-        connectionString: getConnectionString(config)
-      }
-    })
+        connectionString: getConnectionString(config),
+      },
+    });
   }
 
   public async connect(): Promise<void> {
     if (this.isConnected) return;
 
-    const { type, ...providerConfig } = this.config;
-
-    await this.provider.connect(providerConfig);
+    await this.provider.connect(this.config);
     this.isConnected = true;
   }
 

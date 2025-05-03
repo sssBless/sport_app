@@ -1,6 +1,6 @@
-import { DatabaseConfig, DatabaseProvider } from '../types';
-import { Pool } from 'pg';
-import { getConnectionString } from '../utils';
+import {DatabaseConfig, DatabaseProvider} from '../types';
+import {Pool} from 'pg';
+import {getConnectionString} from '../utils';
 
 export class PostgresProvider implements DatabaseProvider {
   private pool: Pool;

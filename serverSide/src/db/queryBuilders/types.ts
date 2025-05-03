@@ -23,6 +23,7 @@ export interface DeleteQuery {
 
 export interface SelectQuery {
   table: string;
+  schema?: string;
   columns?: string[];
   where?: Condition;
   orderBy?: OrderByClause[];
