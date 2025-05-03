@@ -16,8 +16,8 @@ export class PostgresProvider implements DatabaseProvider {
     await this.disconnect();
 
     const poolSettings = config.pool ?? {
-      min: 2,
-      max: 10,
+      min: 1,
+      max: 4,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 2_000,
     };

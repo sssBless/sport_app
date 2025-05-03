@@ -1,14 +1,23 @@
+import { Knex, knex } from 'knex';
 import { ProviderFactory } from './factory/providerFactory';
 import { DatabaseConfig, DatabaseProvider, DatabaseType } from './types';
+import { getConnectionString, getKnexClientType } from './utils';
 
 export class DatabaseWrapper {
   private provider: DatabaseProvider;
   private config: DatabaseConfig;
+  private knexInstance: Knex;
   private isConnected = false;
 
   constructor(config: DatabaseConfig) {
     this.config = config;
     this.provider = ProviderFactory.create(config.type);
+    this.knexInstance = knex({
+      client: getKnexClientType(config.type),
+      connection: {
+        connectionString: getConnectionString(config)
+      }
+    })
   }
 
   public async connect(): Promise<void> {
@@ -27,21 +36,11 @@ export class DatabaseWrapper {
     this.isConnected = false;
   }
 
-  public async select(): Promise<any> {
-    await this.provider.select();
+  public getKnex(): Knex {
+    return this.knexInstance;
   }
 
-  public async insert(): Promise<any> {
-    await this.provider.insert();
-  }
-  public async update(): Promise<any> {
-    await this.provider.update();
-  }
-  public async delete(): Promise<any> {
-    await this.provider.delete();
-  }
-
-  public getDatabaseType(): DatabaseType {
-    return this.config.type;
+  public getProvider(): DatabaseProvider {
+    return this.provider;
   }
 }

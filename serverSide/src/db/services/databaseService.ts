@@ -1,29 +1,22 @@
-import { config } from '../../../config';
+import { DatabaseConfig } from '../types';
 import { DatabaseWrapper } from '../wrapper';
 
 export class DatabaseService {
-  private static instances: Map<string, DatabaseWrapper> = new Map();
+  private static clients: Record<string, DatabaseWrapper> = {};
 
-  public static getClient(dbName: string): DatabaseWrapper {
-    if (!this.instances.has(dbName)) {
-      const dbConfig = config.databases[dbName];
+  public static registerClient(name: string, config: DatabaseConfig): void {
+    this.clients[name] = new DatabaseWrapper(config);
+  }
 
-      if (!dbConfig) throw new Error(`Database config '${dbName}' not found`);
+  public static getClient(name: string): DatabaseWrapper {
+    const client = this.clients[name];
 
-      const db = new DatabaseWrapper(dbConfig);
-      this.instances.set(dbName, db);
+    if (!client) throw new Error(`No database registered with name: ${name}`);
 
-      db.connect().catch((err) => {
-        console.error(`Failed to connect to ${dbName}: `, err);
-      });
-    }
-
-    return this.instances.get(dbName)!;
+    return client;
   }
 
   public static async disconnectAll(): Promise<void> {
-    for (const db of this.instances.values()) {
-      await db.disconnect().catch(console.error);
-    }
+    await Promise.all(Object.values(this.clients).map((db) => db.disconnect()));
   }
 }

@@ -1,8 +1,7 @@
-import { DatabaseConfig } from './src/db/types';
-
+import {DatabaseConfig} from './src/db/types';
 
 interface AppConfig {
-    databases: Record<string, DatabaseConfig>
+  databases: Record<string, DatabaseConfig>;
 }
 
 export const config: AppConfig = {
@@ -14,6 +13,12 @@ export const config: AppConfig = {
       user: '<username>',
       password: '<password>',
       database: '<database_name>',
+      pool: {
+        min: 1,
+        max: 4,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 2_000,
+      },
     },
-  }
+  },
 };

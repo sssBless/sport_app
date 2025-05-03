@@ -1,22 +1,16 @@
-import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { DatabaseWrapper } from '../db/wrapper';
+import { FastifyPluginAsync } from 'fastify';
 import { DatabaseService } from '../db/services/databaseService';
+import { config } from '../../config';
 
-declare module 'fastify' {
-  interface FastifyInstance {
-    databases: {
-      main: DatabaseWrapper;
-    };
-  }
-}
+const databasePlugin: FastifyPluginAsync = async (fastify) => {
+  DatabaseService.registerClient('main', config.databases.main);
 
-const databasePlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  const mainDatabase = DatabaseService.getClient('main');
-  await mainDatabase.connect();
+  const client = DatabaseService.getClient('main');
+  await client.connect();
 
-  fastify.decorate('databases', { main: mainDatabase });
-
-  fastify.addHook('onClose', async () => await DatabaseService.disconnectAll());
+  fastify.addHook('onClose', async () => {
+    await DatabaseService.disconnectAll();
+  });
 };
 
 export default databasePlugin;
