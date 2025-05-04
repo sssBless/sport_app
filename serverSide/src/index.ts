@@ -1,9 +1,11 @@
 import Fastify from 'fastify';
 import databasePlugin from './plugins/databasePlugin';
+import socketPlugin from './plugins/socketPlugin';
 
 const fastify = Fastify();
 
 fastify.register(databasePlugin);
+fastify.register(socketPlugin);
 
 fastify.get('/', async (request, reply) => {
   return 'Hello world';
