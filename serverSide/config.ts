@@ -1,5 +1,5 @@
-import {DatabaseConfig} from './src/db/types';
 import * as dotenv from 'dotenv';
+import {DatabaseConfig} from './src/db/types';
 
 dotenv.config();
 
@@ -7,24 +7,51 @@ interface AppConfig {
   databases: Record<string, DatabaseConfig>;
 }
 
-// Проверка обязательных переменных окружения
+/**
+ * Получает переменную окружения с проверкой
+ * @param name - Имя переменной
+ * @param required - Обязательная ли переменная
+ * @returns Значение переменной
+ * @throws Error если переменная обязательная и не задана
+ */
 function getEnvVar(name: string, required = true): string {
   const value = process.env[name];
-  if (required && (!value || value.trim() === '')) {
+
+  if (required && !value?.trim()) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
-  return value!;
+
+  return value?.trim() || '';
+}
+
+/**
+ * Получает числовую переменную окружения
+ * @param name - Имя переменной
+ * @param defaultValue - Значение по умолчанию
+ * @returns Числовое значение
+ * @throws Error если значение не является числом
+ */
+function getNumericEnvVar(name: string, defaultValue?: number): number {
+  const value = getEnvVar(name, defaultValue === undefined);
+
+  if (!value && defaultValue !== undefined) {
+    return defaultValue;
+  }
+
+  const numericValue = Number(value);
+
+  if (isNaN(numericValue)) {
+    throw new Error(`Environment variable ${name} must be a valid number`);
+  }
+
+  return numericValue;
 }
 
 const PG_HOST = getEnvVar('PG_HOST');
-const PG_PORT = Number(getEnvVar('PG_PORT'));
+const PG_PORT = getNumericEnvVar('PG_PORT');
 const PG_USER = getEnvVar('PG_USER');
 const PG_PASSWORD = getEnvVar('PG_PASSWORD');
 const PG_DATABASE = getEnvVar('PG_DATABASE');
-
-if (isNaN(PG_PORT)) {
-  throw new Error('PG_PORT must be a valid number');
-}
 
 export const config: AppConfig = {
   databases: {
@@ -36,11 +63,15 @@ export const config: AppConfig = {
       password: PG_PASSWORD,
       database: PG_DATABASE,
       pool: {
-        min: 1,
-        max: 4,
-        idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 2_000,
+        min: getNumericEnvVar('PG_POOL_MIN', 1),
+        max: getNumericEnvVar('PG_POOL_MAX', 4),
+        idleTimeoutMillis: getNumericEnvVar('PG_POOL_IDLE_TIMEOUT', 30_000),
+        connectionTimeoutMillis: getNumericEnvVar('PG_POOL_CONN_TIMEOUT', 2_000),
       },
     },
   },
 };
+
+if (!PG_HOST || !PG_USER || !PG_DATABASE) {
+  throw new Error('Invalid PostgreSQL configuration');
+}

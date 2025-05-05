@@ -1,6 +1,17 @@
 import {DatabaseConfig, DatabaseProvider} from '../types';
 import {Pool} from 'pg';
 import {getConnectionString} from '../utils';
+import {Knex} from 'knex';
+import {
+  DeleteQuery,
+  InsertQuery,
+  SelectQuery,
+  UpdateQuery,
+} from '../queryBuilders/types';
+import {SelectQueryBuilder} from '../queryBuilders/selectQueryBuilder';
+import {DeleteQueryBuilder} from '../queryBuilders/deleteQueryBuilder';
+import {UpdateQueryBuilder} from '../queryBuilders/updateQueryBuilder';
+import {InsertQueryBuilder} from '../queryBuilders/insertQueryBuilder';
 
 export class PostgresProvider implements DatabaseProvider {
   private pool: Pool;
@@ -49,19 +60,27 @@ export class PostgresProvider implements DatabaseProvider {
     }
   }
 
-  public select(): Promise<any> {
-    throw new Error('Method not implemented.');
+  public async select(knex: Knex, query: SelectQuery): Promise<any> {
+    const sql = new SelectQueryBuilder(knex, query).build();
+
+    return await this.pool.query(sql);
   }
 
-  public delete(): Promise<any> {
-    throw new Error('Method not implemented.');
+  public async delete(knex: Knex, query: DeleteQuery): Promise<any> {
+    const sql = new DeleteQueryBuilder(knex, query).build();
+
+    return await this.pool.query(sql);
   }
 
-  public update(): Promise<any> {
-    throw new Error('Method not implemented.');
+  public async update(knex: Knex, query: UpdateQuery): Promise<any> {
+    const sql = new UpdateQueryBuilder(knex, query).build();
+
+    return await this.pool.query(sql);
   }
 
-  public insert(): Promise<any> {
-    throw new Error('Method not implemented.');
+  public async insert(knex: Knex, query: InsertQuery): Promise<any> {
+    const sql = new InsertQueryBuilder(knex, query).build();
+
+    return await this.pool.query(sql);
   }
 }

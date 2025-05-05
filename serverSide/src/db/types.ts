@@ -1,3 +1,11 @@
+import {Knex} from 'knex';
+import {
+  DeleteQuery,
+  InsertQuery,
+  SelectQuery,
+  UpdateQuery,
+} from './queryBuilders/types';
+
 export type DatabaseType = 'postgres';
 
 export type ProviderCreator = () => DatabaseProvider;
@@ -22,8 +30,8 @@ export interface DatabaseConfig {
 export interface DatabaseProvider {
   connect(config: Omit<DatabaseConfig, 'type'>): Promise<void>;
   disconnect(): Promise<void>;
-  select(): Promise<any>;
-  delete(): Promise<any>;
-  update(): Promise<any>;
-  insert(): Promise<any>;
+  select(knex: Knex, query: SelectQuery): Promise<any>;
+  delete(knex: Knex, query: DeleteQuery): Promise<any>;
+  update(knex: Knex, query: UpdateQuery): Promise<any>;
+  insert(knex: Knex, query: InsertQuery): Promise<any>;
 }

@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import databasePlugin from './plugins/databasePlugin';
 import socketPlugin from './plugins/socketPlugin';
+import {DatabaseService} from './db/services/databaseService';
 
 const fastify = Fastify();
 
@@ -8,7 +9,14 @@ fastify.register(databasePlugin);
 fastify.register(socketPlugin);
 
 fastify.get('/', async (request, reply) => {
-  return 'Hello world';
+  const client = DatabaseService.getClient('main');
+
+  const provider = client.getProvider();
+
+  client.connect();
+
+  return await provider.select(client.getKnex(), {table: 'users', schema: 'workout_app'});
+
 });
 
 const start = async () => {
