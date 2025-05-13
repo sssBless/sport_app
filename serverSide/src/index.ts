@@ -2,9 +2,11 @@ import Fastify from 'fastify';
 import databasePlugin from './plugins/databasePlugin';
 import socketPlugin from './plugins/socketPlugin';
 import {DatabaseService} from './db/services/databaseService';
+import sessionsPlugin from './plugins/sessionsPlugin';
 
 const fastify = Fastify();
 
+fastify.register(sessionsPlugin);
 fastify.register(databasePlugin);
 fastify.register(socketPlugin);
 
