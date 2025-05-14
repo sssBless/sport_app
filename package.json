@@ -15,8 +15,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "vitest -c serverSide/vitest.config.ts",
+    "test:coverage": "vitest run -c serverSide/vitest.config.ts --coverage",
     "start": "ts-node serverSide/src/index.ts",
     "script": "ts-node serverSide/script.ts"
   },
