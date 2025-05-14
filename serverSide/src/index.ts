@@ -1,31 +1,39 @@
-import Fastify from 'fastify';
+import fastify from 'fastify';
+import cookie from '@fastify/cookie';
 import databasePlugin from './plugins/databasePlugin';
 import socketPlugin from './plugins/socketPlugin';
-import {DatabaseService} from './db/services/databaseService';
-import sessionsPlugin from './plugins/sessionsPlugin';
+import authPlugin from './plugins/authPlugin';
+import workoutPlugin from './plugins/workoutPlugin';
 
-const fastify = Fastify();
+const app = fastify();
 
-fastify.register(sessionsPlugin);
-fastify.register(databasePlugin);
-fastify.register(socketPlugin);
+// Регистрируем поддержку cookie
+app.register(cookie, {
+  secret: process.env.COOKIE_SECRET || 'your-secret-key', // В продакшене использовать безопасный секрет
+  hook: 'onRequest',
+});
 
-fastify.get('/', async (request, reply) => {
-  const client = DatabaseService.getClient('main');
+app.register(databasePlugin);
+app.register(socketPlugin);
+app.register(authPlugin);
+app.register(workoutPlugin);
 
-  const provider = client.getProvider();
-
-  client.connect();
-
-  return await provider.select(client.getKnex(), {table: 'users', schema: 'workout_app'});
-
+// Добавляем поддержку JSON в теле запроса
+app.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
+  try {
+    const json = JSON.parse(body as string);
+    done(null, json);
+  } catch (err) {
+    done(err as Error);
+  }
 });
 
 const start = async () => {
   try {
-    await fastify.listen({port: 3000});
+    await app.listen({ port: 3000, host: '127.0.0.1' });
+    console.log('Server is running on http://127.0.0.1:3000');
   } catch (err) {
-    console.error(err);
+    console.error('Error starting server:', err);
     process.exit(1);
   }
 };
