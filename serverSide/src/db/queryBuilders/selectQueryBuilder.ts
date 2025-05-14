@@ -1,5 +1,5 @@
 import {Knex} from 'knex';
-import {JoinTypes, SelectQuery, SqlResult} from './types';
+import { JoinTypes, SelectQuery, SqlResult } from './types';
 
 export class SelectQueryBuilder {
   private readonly knex: Knex;
@@ -11,7 +11,12 @@ export class SelectQueryBuilder {
   }
 
   public build(): string {
-    return this.toSQL().sql;
+    const sqlQuery = this.toSQL();
+    let finalSql = sqlQuery.sql;
+    sqlQuery.bindings.forEach((value) => {
+      finalSql = finalSql.replace('?', typeof value === 'string' ? `'${value}'` : value);
+    });
+    return finalSql;
   }
 
   public toSQL(): SqlResult {
@@ -58,8 +63,8 @@ export class SelectQueryBuilder {
 
   private applyPagination(query: Knex.QueryBuilder): void {
     const {limit, offset} = this.options;
-    if (limit) query.limit(limit);
-    if (offset) query.offset(offset);
+    if (limit) query.limit(Number(limit));
+    if (offset) query.offset(Number(offset));
   }
 
   private getJoinMethod(type?: string): JoinTypes {

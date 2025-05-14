@@ -1,17 +1,13 @@
 import {DatabaseConfig, DatabaseProvider} from '../types';
-import {Pool} from 'pg';
+import {Pool, QueryResult} from 'pg';
 import {getConnectionString} from '../utils';
 import {Knex} from 'knex';
-import {
-  DeleteQuery,
-  InsertQuery,
-  SelectQuery,
-  UpdateQuery,
-} from '../queryBuilders/types';
 import {SelectQueryBuilder} from '../queryBuilders/selectQueryBuilder';
 import {DeleteQueryBuilder} from '../queryBuilders/deleteQueryBuilder';
 import {UpdateQueryBuilder} from '../queryBuilders/updateQueryBuilder';
 import {InsertQueryBuilder} from '../queryBuilders/insertQueryBuilder';
+import { SelectQuery, DeleteQuery, InsertQuery, UpdateQuery } from '../queryBuilders/types';
+
 
 export class PostgresProvider implements DatabaseProvider {
   private pool: Pool;
@@ -61,26 +57,32 @@ export class PostgresProvider implements DatabaseProvider {
   }
 
   public async select(knex: Knex, query: SelectQuery): Promise<any> {
-    const sql = new SelectQueryBuilder(knex, query).build();
-
-    return await this.pool.query(sql);
+    const sqlQuery = new SelectQueryBuilder(knex, query).build();
+    
+    const result: QueryResult = await this.pool.query(sqlQuery);
+    return result.rows;
   }
 
   public async delete(knex: Knex, query: DeleteQuery): Promise<any> {
-    const sql = new DeleteQueryBuilder(knex, query).build();
+    const sqlQuery = new DeleteQueryBuilder(knex, query).build();
 
-    return await this.pool.query(sql);
+    const result: QueryResult = await this.pool.query(sqlQuery);
+    return result.rowCount;
   }
 
   public async update(knex: Knex, query: UpdateQuery): Promise<any> {
-    const sql = new UpdateQueryBuilder(knex, query).build();
-
-    return await this.pool.query(sql);
+    const sqlQuery = new UpdateQueryBuilder(knex, query).build();
+    const result: QueryResult = await this.pool.query(sqlQuery);
+    return result.rowCount;
   }
 
   public async insert(knex: Knex, query: InsertQuery): Promise<any> {
-    const sql = new InsertQueryBuilder(knex, query).build();
+    const sqlQuery = new InsertQueryBuilder(knex, query).build();
+    const result: QueryResult = await this.pool.query(sqlQuery);
+    return result.rows;
+  }
 
-    return await this.pool.query(sql);
+  public async query(sql: string, values?: any[]): Promise<any> {
+    return this.pool.query(sql, values);
   }
 }

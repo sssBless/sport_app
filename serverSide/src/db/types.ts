@@ -34,4 +34,5 @@ export interface DatabaseProvider {
   delete(knex: Knex, query: DeleteQuery): Promise<any>;
   update(knex: Knex, query: UpdateQuery): Promise<any>;
   insert(knex: Knex, query: InsertQuery): Promise<any>;
+  query(sql: string, values?: any[]): Promise<any>;
 }

@@ -1,5 +1,5 @@
 import {Knex} from 'knex';
-import {InsertQuery, SqlResult} from './types';
+import { InsertQuery, SqlResult } from './types';
 
 export class InsertQueryBuilder {
   private readonly knex: Knex;
@@ -11,7 +11,12 @@ export class InsertQueryBuilder {
   }
 
   public build(): string {
-    return this.toSQL().sql;
+    const sqlQuery = this.toSQL();
+    let finalSql = sqlQuery.sql;
+    sqlQuery.bindings.forEach((value) => {
+      finalSql = finalSql.replace('?', typeof value === 'string' ? `'${value}'` : value);
+    });
+    return finalSql;
   }
 
   public toSQL(): SqlResult {

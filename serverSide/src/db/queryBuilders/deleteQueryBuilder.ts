@@ -1,5 +1,5 @@
 import {Knex} from 'knex';
-import {DeleteQuery, SqlResult} from './types';
+import { DeleteQuery, SqlResult } from './types';
 
 export class DeleteQueryBuilder {
   private readonly knex: Knex;
@@ -11,7 +11,12 @@ export class DeleteQueryBuilder {
   }
 
   public build(): string {
-    return this.toSQL().sql;
+    const sqlQuery = this.toSQL();
+    let finalSql = sqlQuery.sql;
+    sqlQuery.bindings.forEach((value) => {
+      finalSql = finalSql.replace('?', typeof value === 'string' ? `'${value}'` : value);
+    });
+    return finalSql;
   }
 
   public toSQL(): SqlResult {
