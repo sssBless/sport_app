@@ -8,16 +8,23 @@ export type JoinTypes =
   | 'rightJoin'
   | 'fullOuterJoin';
 
+export interface SqlResult {
+  sql: string;
+  bindings: readonly any[];
+}
+
 type JoinCondition = [string, string, string];
 
 export interface UpdateQuery {
   table: string;
+  schema?: string;
   values: Record<string, any>;
   where: Condition;
 }
 
 export interface DeleteQuery {
   table: string;
+  schema?: string;
   where: Condition;
 }
 
@@ -34,6 +41,7 @@ export interface SelectQuery {
 
 export interface InsertQuery {
   table: string;
+  schema?: string;
   values: Record<string, any>[];
 }
 

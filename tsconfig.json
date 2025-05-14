@@ -9,5 +9,6 @@
     "strict": true,
     "skipLibCheck": true,
     "typeRoots": ["./types"]
-  }
+  },
+  "exclude": ["vitest.config.ts"]
 }

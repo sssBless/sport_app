@@ -68,4 +68,14 @@ export const and =
 export const or =
   (conditions: Condition[]): Condition =>
   queryBuilder =>
-    queryBuilder.orWhere(inner => conditions.forEach(c => c(inner)));
+    queryBuilder.where(function() {
+      conditions.forEach((condition, index) => {
+        if (index === 0) {
+          condition(this);
+        } else {
+          this.orWhere(function() {
+            condition(this);
+          });
+        }
+      });
+    });

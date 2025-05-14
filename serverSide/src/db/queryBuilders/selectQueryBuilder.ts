@@ -1,5 +1,5 @@
 import {Knex} from 'knex';
-import {JoinTypes, SelectQuery} from './types';
+import {JoinTypes, SelectQuery, SqlResult} from './types';
 
 export class SelectQueryBuilder {
   private readonly knex: Knex;
@@ -11,11 +11,15 @@ export class SelectQueryBuilder {
   }
 
   public build(): string {
+    return this.toSQL().sql;
+  }
+
+  public toSQL(): SqlResult {
     const {table, columns = ['*'], schema} = this.options;
 
     let baseQuery = schema
-    ? this.knex(table).withSchema(schema)
-    : this.knex(table);
+      ? this.knex(table).withSchema(schema)
+      : this.knex(table);
 
     let query = baseQuery.select(columns);
 
@@ -24,7 +28,7 @@ export class SelectQueryBuilder {
     this.applyOrderBy(query);
     this.applyPagination(query);
 
-    return query.toSQL().sql;
+    return query.toSQL();
   }
 
   private applyJoins(query: Knex.QueryBuilder): void {

@@ -1,5 +1,5 @@
 import {Knex} from 'knex';
-import {InsertQuery} from './types';
+import {InsertQuery, SqlResult} from './types';
 
 export class InsertQueryBuilder {
   private readonly knex: Knex;
@@ -9,8 +9,16 @@ export class InsertQueryBuilder {
     this.knex = knex;
     this.options = options;
   }
+
   public build(): string {
-    const {table, values} = this.options;
-    return this.knex(table).insert(values).toSQL().sql;
+    return this.toSQL().sql;
+  }
+
+  public toSQL(): SqlResult {
+    const {table, values, schema} = this.options;
+    const query = schema
+      ? this.knex(table).withSchema(schema).insert(values)
+      : this.knex(table).insert(values);
+    return query.toSQL();
   }
 }

@@ -1,5 +1,5 @@
 import {Knex} from 'knex';
-import {DeleteQuery} from './types';
+import {DeleteQuery, SqlResult} from './types';
 
 export class DeleteQueryBuilder {
   private readonly knex: Knex;
@@ -11,9 +11,15 @@ export class DeleteQueryBuilder {
   }
 
   public build(): string {
-    const {table, where} = this.options;
-    const query = this.knex(table).delete();
+    return this.toSQL().sql;
+  }
+
+  public toSQL(): SqlResult {
+    const {table, where, schema} = this.options;
+    const query = schema
+      ? this.knex(table).withSchema(schema).delete()
+      : this.knex(table).delete();
     where(query);
-    return query.toSQL().sql;
+    return query.toSQL();
   }
 }

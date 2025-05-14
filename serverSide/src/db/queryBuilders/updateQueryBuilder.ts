@@ -1,5 +1,5 @@
 import {Knex} from 'knex';
-import {UpdateQuery} from './types';
+import {UpdateQuery, SqlResult} from './types';
 
 export class UpdateQueryBuilder {
   private readonly knex: Knex;
@@ -11,9 +11,15 @@ export class UpdateQueryBuilder {
   }
 
   public build(): string {
-    const {table, values, where} = this.options;
-    const query = this.knex(table).update(values);
+    return this.toSQL().sql;
+  }
+
+  public toSQL(): SqlResult {
+    const {table, values, where, schema} = this.options;
+    const query = schema
+      ? this.knex(table).withSchema(schema).update(values)
+      : this.knex(table).update(values);
     where(query);
-    return query.toSQL().sql;
+    return query.toSQL();
   }
 }
