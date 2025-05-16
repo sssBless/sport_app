@@ -1,54 +1,73 @@
-# React + TypeScript + Vite
+# Sport App - Клиентская часть
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Описание
+Sport App - это современное веб-приложение для планирования и отслеживания тренировок. Клиентская часть разработана с использованием React и TypeScript, предоставляя пользователям удобный интерфейс для управления тренировками и упражнениями.
 
-Currently, two official plugins are available:
+## Основные функции
+- 🔐 Система аутентификации пользователей
+- 📅 Планирование тренировок
+- 🏋️ Управление упражнениями
+- 👥 Совместные тренировки и приглашения
+- 📊 Отслеживание прогресса
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Технический стек
+- React 18
+- TypeScript
+- Redux (@reduxjs/toolkit) + redux-persist
+- React Router
+- Axios для HTTP-запросов
+- Material UI (@mui/material и @mui/icons-material)
+- DnD Kit (@dnd-kit) и react-beautiful-dnd для drag-and-drop функциональности
+- Vite (сборка проекта)
 
-## Expanding the ESLint configuration
+## Установка и запуск
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Предварительные требования
+- Node.js (рекомендуется версия 16 или выше)
+- npm или yarn
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+### Запуск в режиме разработки
+```bash
+# Запуск только клиентской части
+npm run dev:client
+
+# Запуск всего проекта (клиент + сервер)
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Сборка для production
+```bash
+# Сборка клиентской части
+npm run build:client
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+# Сборка всего проекта
+npm run build
 ```
+
+## Структура проекта
+```
+clientSide/
+├── src/             # Исходный код
+│   ├── components/  # React компоненты
+│   ├── pages/       # Страницы приложения
+│   ├── store/       # Redux store
+│   ├── services/    # Сервисы для API
+│   ├── hooks/       # Кастомные React хуки
+│   └── utils/       # Вспомогательные функции
+├── public/          # Статичные файлы
+└── index.html       # Главный HTML файл
+```
+
+## Аутентификация
+Приложение использует токен-based аутентификацию:
+- Токен хранится в куках (`auth_token`)
+- Все защищенные маршруты проверяются через компонент `PrivateRoute`
+- Данные пользователя хранятся в Redux store
+
+## Основные компоненты
+- Drag-and-drop интерфейс для управления упражнениями (DnD Kit)
+- Material UI компоненты для современного и отзывчивого дизайна
+- Redux Persist для сохранения состояния между сессиями
+
+## Контакты
+По вопросам разработки и поддержки обращайтесь к команде разработки.
