@@ -59,7 +59,9 @@ export class PostgresProvider implements DatabaseProvider {
   public async select(knex: Knex, query: SelectQuery): Promise<any> {
     const sqlQuery = new SelectQueryBuilder(knex, query).build();
     
+    console.log('SQL Query:', sqlQuery);
     const result: QueryResult = await this.pool.query(sqlQuery);
+
     return result.rows;
   }
 

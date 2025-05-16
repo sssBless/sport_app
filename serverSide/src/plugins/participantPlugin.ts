@@ -1,9 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 import { eq, and } from '../db/queryBuilders/filters';
 import { DatabaseService } from '../db/services/databaseService';
+import {  AuthenticatedFastifyInstance } from '../../types/fastify';
+
 const SCHEMA = 'workout_app';
 
-const participantPlugin: FastifyPluginAsync = async (fastify) => {
+const participantPlugin: FastifyPluginAsync = async (fastify: AuthenticatedFastifyInstance) => {
   // Получение всех приглашений пользователя
   fastify.get('/invitations', { preHandler: fastify.authenticate }, async (req, reply) => {
     const user = req.user;
