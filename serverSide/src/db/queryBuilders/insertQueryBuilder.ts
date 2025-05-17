@@ -20,10 +20,15 @@ export class InsertQueryBuilder {
   }
 
   public toSQL(): SqlResult {
-    const {table, values, schema} = this.options;
-    const query = schema
+    const {table, values, schema, returning} = this.options;
+    let query = schema
       ? this.knex(table).withSchema(schema).insert(values)
       : this.knex(table).insert(values);
+      
+    if (returning) {
+      query = query.returning(returning);
+    }
+    
     return query.toSQL();
   }
 }

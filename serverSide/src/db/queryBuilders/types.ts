@@ -43,6 +43,7 @@ export interface InsertQuery {
   table: string;
   schema?: string;
   values: Record<string, any>[];
+  returning?: string[];
 }
 
 interface JoinOptions {

@@ -1,26 +1,27 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import MainPage from './pages/MainPage';
-import WorkoutsPage from './pages/WorkoutsPage';
-import WorkoutPage from './pages/WorkoutPage';
-import WorkoutTimerPage from './pages/WorkoutTimerPage';
-import ProfilePage from './pages/ProfilePage';
-import PrivateRoute from './components/PrivateRoute';
+import { FC } from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { store, persistor } from './store/store';
+import { theme } from './utils/theme';
+import { AppRouter } from './components/router/AppRouter';
+import { SocketProvider } from './services/socket/SocketProvider';
 
-const App: React.FC = () => {
+const App: FC = () => {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/" element={<PrivateRoute><MainPage /></PrivateRoute>} />
-      <Route path="/workouts" element={<PrivateRoute><WorkoutsPage /></PrivateRoute>} />
-      <Route path="/workout/:id" element={<PrivateRoute><WorkoutPage /></PrivateRoute>} />
-      <Route path="/workout/:id/timer" element={<PrivateRoute><WorkoutTimerPage /></PrivateRoute>} />
-      <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <BrowserRouter>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <SocketProvider>
+              <AppRouter />
+            </SocketProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </PersistGate>
+    </Provider>
   );
 };
 

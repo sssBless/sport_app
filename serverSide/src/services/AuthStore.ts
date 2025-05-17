@@ -19,7 +19,12 @@ export class AuthStore {
   private readonly TOKEN_EXPIRATION = 24 * 60 * 60 * 1000; // 24 часа
   private readonly SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key';
 
-  private constructor() {}
+  private constructor() {
+    // Автоматическая очистка просроченных токенов
+    setInterval(() => {
+      this.cleanup();
+    }, 15 * 60 * 1000); // Каждые 15 минут
+  }
 
   public static getInstance(): AuthStore {
     if (!AuthStore.instance) {
@@ -29,6 +34,9 @@ export class AuthStore {
   }
 
   public addUser(uuid: string, username: string, clientInfo: ClientInfo): string {
+    // Очищаем существующие токены этого пользователя при новом логине
+    this.invalidateUserSessions(uuid);
+    
     const signature = this.generateSignature(uuid);
     
     const user = {
@@ -40,53 +48,87 @@ export class AuthStore {
     };
     
     this.users.set(signature, user);
-    console.log('Added user to AuthStore:', { username, signature });
-    console.log('Current users in store:', Array.from(this.users.keys()));
+    console.log(`[AuthStore] Пользователь добавлен: ${username}, UUID: ${uuid.substring(0, 8)}`);
+    console.log(`[AuthStore] Всего активных пользователей: ${this.users.size}`);
     
     return signature;
   }
 
   public getUser(signature: string): AuthenticatedUser | null {
-    console.log('Getting user for signature:', signature);
-    console.log('Available signatures:', Array.from(this.users.keys()));
+    if (!signature) {
+      console.log('[AuthStore] Запрос пользователя с пустой подписью');
+      return null;
+    }
+    
+    console.log(`[AuthStore] Поиск пользователя для подписи: ${signature.substring(0, 8)}...`);
     
     const user = this.users.get(signature);
-    console.log('Found user:', user);
     
     if (!user) {
-      console.log('User not found in store');
+      console.log('[AuthStore] Пользователь не найден в хранилище');
       return null;
     }
 
     if (Date.now() - user.lastActivity > this.TOKEN_EXPIRATION) {
-      console.log('User session expired');
+      console.log('[AuthStore] Сессия пользователя истекла');
       this.removeUser(signature);
       return null;
     }
 
+    // Обновляем время активности
     user.lastActivity = Date.now();
+    console.log(`[AuthStore] Пользователь найден: ${user.username}, UUID: ${user.uuid.substring(0, 8)}`);
+    
     return user;
   }
 
   public removeUser(signature: string): void {
-    console.log('Removing user with signature:', signature);
+    const user = this.users.get(signature);
+    if (user) {
+      console.log(`[AuthStore] Удаление пользователя: ${user.username}, UUID: ${user.uuid.substring(0, 8)}`);
+    } else {
+      console.log(`[AuthStore] Попытка удаления несуществующего пользователя с подписью: ${signature.substring(0, 8)}...`);
+    }
+    
     this.users.delete(signature);
-    console.log('Remaining users:', Array.from(this.users.keys()));
+    console.log(`[AuthStore] Осталось активных пользователей: ${this.users.size}`);
+  }
+
+  // Инвалидирует все сессии конкретного пользователя
+  public invalidateUserSessions(userUuid: string): void {
+    let count = 0;
+    for (const [signature, user] of this.users.entries()) {
+      if (user.uuid === userUuid) {
+        this.users.delete(signature);
+        count++;
+      }
+    }
+    if (count > 0) {
+      console.log(`[AuthStore] Инвалидировано ${count} сессий для пользователя с UUID: ${userUuid.substring(0, 8)}`);
+    }
   }
 
   public validateSignature(signature: string, clientInfo: ClientInfo): boolean {
-    console.log('Validating signature:', signature);
-    console.log('With client info:', clientInfo);
+    if (!signature) {
+      console.log('[AuthStore] Попытка валидации пустой подписи');
+      return false;
+    }
+    
+    console.log(`[AuthStore] Валидация подписи: ${signature.substring(0, 8)}...`);
+    console.log(`[AuthStore] Информация о клиенте: IP=${clientInfo.ip}, UA=${clientInfo.userAgent.substring(0, 20)}...`);
     
     const user = this.users.get(signature);
     if (!user) {
-      console.log('No user found for signature');
+      console.log('[AuthStore] Пользователь не найден для данной подписи');
       return false;
     }
 
+    // На этапе валидации делаем более простую проверку без проверки user-agent и ip
+    // для более стабильной работы между запросами
+    
     // Обновляем время последней активности
     user.lastActivity = Date.now();
-    console.log('Signature validated successfully');
+    console.log(`[AuthStore] Подпись успешно валидирована для пользователя: ${user.username}`);
     return true;
   }
 
@@ -100,13 +142,14 @@ export class AuthStore {
       }
     }
     if (cleanedCount > 0) {
-      console.log(`Cleaned up ${cleanedCount} expired sessions`);
+      console.log(`[AuthStore] Очищено ${cleanedCount} истекших сессий`);
     }
   }
 
   private generateSignature(uuid: string): string {
     const timestamp = Date.now();
-    const data = `${uuid}:${timestamp}:${this.SECRET_KEY}`;
+    const randomPart = Math.random().toString(36).substring(2, 10);
+    const data = `${uuid}:${timestamp}:${randomPart}:${this.SECRET_KEY}`;
     return crypto.createHash('sha256').update(data).digest('hex');
   }
 
@@ -121,9 +164,9 @@ export class AuthStore {
   public debugStore(): string {
     const activeUsers = this.getAllUsers().map(u => ({
       username: u.username,
-      uuid: u.uuid,
+      uuid: u.uuid.substring(0, 8),
       lastActivity: new Date(u.lastActivity).toISOString(),
-      signatureStart: u.signature.substring(0, 5)
+      signatureStart: u.signature.substring(0, 8)
     }));
     
     return JSON.stringify({

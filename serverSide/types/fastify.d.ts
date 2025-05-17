@@ -24,7 +24,25 @@ export type AuthenticatedRequest = FastifyRequest & {
 
 export interface AuthenticatedFastifyInstance extends FastifyInstance {
   authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>;
-  notificationService?: {
-    notifyUser: (userId: string, message: string) => void;
-  };
+  notificationService: NotificationService;
+}
+
+// Определяем интерфейс для NotificationService
+export interface NotificationService {
+  notifyUser(
+    userUuid: string,
+    message: string,
+    title?: string,
+    type?: string,
+    relatedEntityId?: string
+  ): Promise<void>;
+  
+  notifyAll(
+    message: string,
+    title?: string,
+    type?: string
+  ): void;
+  
+  registerUser(userUuid: string, socket: any): void;
+  unregisterUser(socket: any): void;
 }

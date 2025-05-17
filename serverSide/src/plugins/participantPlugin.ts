@@ -30,55 +30,127 @@ const participantPlugin: FastifyPluginAsync = async (fastify: AuthenticatedFasti
   fastify.post('/invitations', { preHandler: fastify.authenticate }, async (req, reply) => {
     const user = req.user;
     if (!user) return reply.status(401).send({ error: 'Пользователь не авторизован' });
-    const { workout_uuid, recipient_uuid } = req.body as any;
+    
+    console.log('[POST /invitations] Получен запрос на приглашение:', req.body);
+    
+    const { workout_uuid, recipient_uuid, email } = req.body as any;
+    if (!workout_uuid) {
+      return reply.status(400).send({ error: 'Не указан ID тренировки (workout_uuid)' });
+    }
+    
     const databaseClient = DatabaseService.getClient('main');
     const databaseProvider = databaseClient.getProvider();
     const knex = databaseClient.getKnex();
 
     // Проверка: только создатель может приглашать
-    const [creator] = await databaseProvider.select(knex, {
-      table: 'workout_participants',
+    console.log(`[POST /invitations] Проверяем, является ли пользователь ${user.uuid} создателем тренировки ${workout_uuid}`);
+    const [workoutInfo] = await databaseProvider.select(knex, {
+      table: 'workouts',
       schema: SCHEMA,
-      columns: ['role'],
-      where: and([
-        eq('workout_uuid', workout_uuid),
-        eq('user_uuid', user.uuid),
-        eq('role', 'creator')
-      ])
+      columns: ['created_by'],
+      where: eq('workout_uuid', workout_uuid)
     });
-    if (!creator) return reply.status(403).send({ error: 'Нет прав' });
+    
+    if (!workoutInfo) {
+      return reply.status(404).send({ error: 'Тренировка не найдена' });
+    }
+    
+    const isCreator = workoutInfo.created_by === user.uuid;
+    console.log(`[POST /invitations] Пользователь ${user.uuid} создатель тренировки: ${isCreator}`);
+    
+    if (!isCreator) {
+      return reply.status(403).send({ error: 'Только создатель тренировки может отправлять приглашения' });
+    }
+
+    // Поиск получателя по email, если он указан
+    let targetRecipientUuid = recipient_uuid;
+    if (!targetRecipientUuid && email) {
+      console.log(`[POST /invitations] Ищем пользователя по email: ${email}`);
+      const [foundUser] = await databaseProvider.select(knex, {
+        table: 'users',
+        schema: SCHEMA,
+        columns: ['user_uuid'],
+        where: eq('email', email)
+      });
+      
+      if (foundUser) {
+        targetRecipientUuid = foundUser.user_uuid;
+        console.log(`[POST /invitations] Найден пользователь с email ${email}: ${targetRecipientUuid}`);
+      } else {
+        console.log(`[POST /invitations] Пользователь с email ${email} не найден`);
+        return reply.status(404).send({ error: 'Пользователь с указанным email не найден' });
+      }
+    }
+    
+    if (!targetRecipientUuid) {
+      return reply.status(400).send({ error: 'Не указан получатель приглашения' });
+    }
 
     // Проверка: не приглашать самого себя и не приглашать уже участвующего
-    if (recipient_uuid === user.uuid) return reply.status(400).send({ error: 'Нельзя пригласить себя' });
+    if (targetRecipientUuid === user.uuid) {
+      return reply.status(400).send({ error: 'Нельзя пригласить себя' });
+    }
+    
+    console.log(`[POST /invitations] Проверяем, является ли пользователь ${targetRecipientUuid} уже участником тренировки`);
     const [alreadyParticipant] = await databaseProvider.select(knex, {
       table: 'workout_participants',
       schema: SCHEMA,
       columns: ['user_uuid'],
       where: and([
         eq('workout_uuid', workout_uuid),
-        eq('user_uuid', recipient_uuid)
+        eq('user_uuid', targetRecipientUuid)
       ])
     });
-    if (alreadyParticipant) return reply.status(400).send({ error: 'Пользователь уже участник' });
-
-    // Создать приглашение
-    const [invitation] = await databaseProvider.insert(knex, {
+    
+    if (alreadyParticipant) {
+      return reply.status(400).send({ error: 'Пользователь уже участник' });
+    }
+    
+    // Проверяем, существует ли уже активное приглашение
+    console.log(`[POST /invitations] Проверяем существующие приглашения`);
+    const [existingInvitation] = await databaseProvider.select(knex, {
       table: 'invitations',
       schema: SCHEMA,
-      values: [{
-        workout_uuid,
-        sender_uuid: user.uuid,
-        recipient_uuid,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      }]
+      columns: ['invitation_uuid'],
+      where: and([
+        eq('workout_uuid', workout_uuid),
+        eq('recipient_uuid', targetRecipientUuid),
+        eq('status', 'pending')
+      ])
     });
-    // Отправляем уведомление получателю, если он онлайн
-    if (fastify.notificationService) {
-      fastify.notificationService.notifyUser(recipient_uuid, `Вам пришло приглашение на тренировку!`);
+    
+    if (existingInvitation) {
+      return reply.status(400).send({ error: 'Приглашение уже отправлено' });
     }
-    return { invitation };
+
+    // Создать приглашение
+    console.log(`[POST /invitations] Создаем новое приглашение`);
+    try {
+      const [invitation] = await databaseProvider.insert(knex, {
+        table: 'invitations',
+        schema: SCHEMA,
+        values: [{
+          workout_uuid,
+          sender_uuid: user.uuid,
+          recipient_uuid: targetRecipientUuid,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        }]
+      });
+      
+      // Отправляем уведомление получателю, если он онлайн
+      if (fastify.notificationService) {
+        console.log(`[POST /invitations] Отправляем уведомление получателю ${targetRecipientUuid}`);
+        fastify.notificationService.notifyUser(targetRecipientUuid, `Вам пришло приглашение на тренировку!`);
+      }
+      
+      console.log(`[POST /invitations] Приглашение успешно создано`);
+      return { invitation };
+    } catch (error) {
+      console.error('[POST /invitations] Ошибка при создании приглашения:', error);
+      return reply.status(500).send({ error: 'Ошибка при создании приглашения' });
+    }
   });
 
   // Принять/отклонить приглашение

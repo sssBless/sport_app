@@ -49,7 +49,7 @@ CREATE TABLE exercises (
 
 CREATE TABLE workout_exercises (
     workout_uuid UUID NOT NULL REFERENCES workouts(workout_uuid) ON DELETE CASCADE,
-    exercise_id INT NOT NULL REFERENCES exercises(exercise_id) ON DELETE CASCADE, -- Каскадное удаление
+    exercise_id INT NOT NULL REFERENCES exercises(exercise_id) ON DELETE CASCADE,
     sets SMALLINT NOT NULL CHECK (sets BETWEEN 1 AND 20),
     reps SMALLINT NOT NULL CHECK (reps BETWEEN 1 AND 100),
     rest_seconds SMALLINT CHECK (rest_seconds BETWEEN 0 AND 600),
@@ -64,6 +64,7 @@ CREATE TABLE invitations (
     recipient_uuid UUID NOT NULL REFERENCES users(user_uuid) ON DELETE CASCADE,
     status invitation_status NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NULL,
     expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
     CHECK (sender_uuid <> recipient_uuid)
 );
